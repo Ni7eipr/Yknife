@@ -1,0 +1,280 @@
+{% extends "include/base.html" %}
+
+{% block styles %}
+    {{ super() }}
+    <link rel="stylesheet" href="{{ url_for('.static', filename='jstree/themes/default/style.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('.static', filename='bootstrap-table/bootstrap-table.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('.static', filename='datetimepicker/bootstrap-datetimepicker.min.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="col-xs-2">
+    <div class="panel panel-default">
+        <div class="panel-body">
+            目录
+        </div>
+    </div>
+    <div id="jstree"></div>
+</div>
+<div class="col-xs-10">
+  <div class="panel panel-default">
+      <div class="panel-body">
+          <table id="table">
+              <thead>
+                  <tr>
+                    <th data-visible='false'></th>
+                    <th>文件名</th>
+                    <th>日期</th>
+                    <th>权限</th>
+                    <th>大小</th>
+                  </tr>
+              </thead>
+              <tbody>
+              </tbody>
+          </table>
+      </div>
+  </div>
+</div>
+<ul id="context-menu" class="dropdown-menu">
+    <li data-item="refresh"><a href="javascript:void(0)">刷新</a></li>
+    <li class="divider"></li>
+    <li data-item="upload"> <a href="javascript:void(0)"> 上传 </a> </li>
+    <li data-item="download"><a href="javascript:void(0)">下载</a></li>
+    <li class="divider"></li>
+    <!-- <li data-item="copy"><a href="javascript:void(0)">复制</a></li>
+    <li data-item="paste"><a href="javascript:void(0)">粘贴</a></li> -->
+    <!-- <li class="divider"></li> -->
+    <li data-item="edit"><a href="javascript:void(0)">编辑</a></li>
+    <li data-item="delete"><a href="javascript:void(0)">删除</a></li>
+    <li data-item="rename"><a href="javascript:void(0)">重命名</a></li>
+    <li data-item="changetime"><a href="javascript:void(0)">修改时间</a></li>
+    <li class="divider"></li>
+    <li data-item="add"><a href="javascript:void(0)">新建</a></li>
+</ul>
+<div id="toolbar" class="btn-group">
+    <button type="button" class="btn" id="newfile">
+
+        <i class="glyphicon glyphicon-file"></i>新文件
+    </button>
+    <button type="button" class="btn" id="newfiles">
+        <i class="glyphicon glyphicon-level-up"></i>新文件夹
+    </button>
+    <button type="button" class="btn" id="upfile">
+        <i class="glyphicon glyphicon-cloud-upload"></i>上传
+    </button>
+</div>
+<input id="upload" type="file" class="hidden">
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+  <script src="{{ url_for('.static', filename='bootstrap-table/bootstrap-table.min.js') }}"></script>
+  <script src="{{ url_for('.static', filename='bootstrap-table/bootstrap-table-zh-CN.js') }}"></script>
+  <script src="{{ url_for('.static', filename='bootstrap-table/bootstrap-table-contextmenu.js') }}"></script>
+
+  <script src="{{ url_for('.static', filename='jstree/jstree.min.js') }}"></script>
+
+  <script src="{{ url_for('.static', filename='datetimepicker/bootstrap-datetimepicker.min.js') }}"></script>
+  <script src="{{ url_for('.static', filename='datetimepicker/bootstrap-datetimepicker.zh-CN.js') }}"></script>
+
+  <script>
+        var open = window.open
+        var table = $('#table');
+        var jstree =  $('#jstree');
+        function getselectedpath() {
+            path = jstree.jstree(true).get_path(getselected(), '/');
+            if(path.charAt(0)=='/'&&path.charAt(1)=='/')
+            return path.substr(1)
+            else
+            return path
+        }
+        function getselected() {
+            let node = jstree.jstree(true).get_selected();
+            return jstree.jstree(true).get_node(node);
+        }
+        function newfile() {
+            layer.open({
+                anim: 1,
+                type: 2,
+                title: false,
+                area: ['50%', '60%'],
+                shadeClose: true,
+                shade: 0.8,
+                content: 'add/'
+            });
+        }
+        function newfiles() {
+            layer.open({
+                anim: 1,
+                type: 2,
+                title: false,
+                area: ['50%', '60%'],
+                shadeClose: true,
+                shade: 0.8,
+                content: 'add/'
+            });
+        }
+        $("#newfile").click(function(){
+            newfile();
+        });
+        $("#newfiles").click(function(){
+            console.log(1)
+            layer.prompt(
+                {title: '文件夹名：', formType: 0},
+                function (name, index) {
+                    layer.close(index);
+                    $.get('newfiles/?f=' + name, function (result) {
+                        if (result.status) {
+                            window.location.reload()
+                        } else {
+                            layer.msg(result.msg)
+                        }
+                    })
+                }
+            );
+        });
+        $("#upfile").click(function(){
+            $("#upload").click();
+        });
+        $("#upload").change(function(){
+            node = getselected();
+            path = getselectedpath();
+            var formData = new FormData();
+            formData.append('upload', $("#upload")[0].files[0]);
+            formData.append('csrf_token', "{{ csrf_token() }}");
+            $.ajax({
+                url: 'upload/?f=' + path + '/' + $("#upload")[0].files[0].name,
+                type: 'post',
+                data: formData,
+                contentType: false,
+                processData: false,
+                success: function(result) {
+                    if(result.status) {
+                        jstree.jstree(true).refresh_node(node);
+                    } else {
+                        layer.msg(result.msg)
+                    }
+                }
+            })
+        });
+
+        jstree.jstree({
+            'core' : {
+                'data' : function (node, callback) {
+                    let path = jstree.jstree(true).get_path(node, '/');
+                    $.post('', {path: path, csrf_token: "{{ csrf_token() }}"}, function(result) {
+                        if(result.status == 1) {
+                            callback.call(this, result.data.lists);
+                            table.bootstrapTable('load', result.data.files);
+                        } else if(result.status == -1) {
+                            layer.confirm(result.msg, function(index){
+                                window.close();
+                                layer.close(index);
+                            });
+                        } else {
+                            layer.msg(result.msg)
+                            callback.call(this, '');
+                            jstree.jstree(true).disable_node(node);
+                        }
+                    })
+                },
+                dblclick_toggle: false,
+            }
+        }).bind("select_node.jstree", function(event, data) {
+            jstree.jstree(true).toggle_node(data.node);
+            if(jstree.jstree(true).is_open(data.node))
+            jstree.jstree(true).refresh_node(data.node);
+        }).bind("after_open.jstree", function(event, data) {
+            $(".jstree-icon").click(function(){return false;});
+        }).bind("ready.jstree", function(event, data) {
+            $(".jstree-icon").click(function(){return false;});
+        });
+
+        table.bootstrapTable({
+            classes: "table table-hover table-no-bordered",
+            striped: true,
+            search: true,
+            showToggle: true,
+            uniqueId: "1",
+            toolbar: "#toolbar",
+            onDblClickRow: function(row) {
+                node = getselected();
+                if(!row[0]) {
+                    path = getselectedpath() + '/' + row[1];
+                    open('edit/?f=' + path);
+                }
+                else {
+                    $.each(node.children, function(k, v){
+                        let node = jstree.jstree(true).get_node(v);
+                        if(node.text == row[1]) {
+                            jstree.jstree(true).deselect_all();
+                            jstree.jstree(true).select_node(node);
+                            return false;
+                        }
+                    })
+                }
+            },
+            contextMenu: '#context-menu',
+            onContextMenuItem: function(row, el, a) {
+                node = getselected();
+                path = getselectedpath() + '/' + row[1];
+                if(el.data("item") == "refresh") {
+                    jstree.jstree(true).refresh_node(node);
+                } else if (el.data("item") == "upload") {
+                    $("#upload").click();
+                } else if(el.data("item") == "download") {
+                    open('download/?f=' + path);
+                } else if(el.data("item") == "edit") {
+                    if(row[1].charAt(row[1].length - 1) != '/') {
+                        open('edit/?f=' + path);
+                    }
+                } else if(el.data("item") == "delete") {
+                    layer.confirm('确定删除？', function(index){
+                        $.get('del/?f=' + path, function(result) {
+                            if(result.status) {
+                                table.bootstrapTable('removeByUniqueId', row[1]);
+                                layer.msg(result.msg);
+                            } else {
+                                layer.msg(result.msg);
+                            }
+                        })
+                        layer.close(index);
+                    });
+                } else if(el.data("item") == "rename") {
+                    layer.prompt(
+                        {title: '新文件名：', formType: 0, value: row[1]},
+                        function (pass, index) {
+                            layer.close(index);
+                            $.get('rename/?f=' + path + '&n=' + pass, function (result) {
+                                if (result.status) {
+                                    jstree.jstree(true).refresh_node(node);
+                                }
+                            })
+                        }
+                    );
+                } else if(el.data("item") == "add") {
+                    newfile();
+                } else if(el.data("item") == "changetime") {
+                    layer.open({
+                        content: '<input size="16" type="text" readonly class="form_datetime">',
+                        yes: function(index, layero){
+                            $.get('changetime/?f=' + path + '&t=' + $(".form_datetime").val(), function (result) {
+                                if (result.status) {
+                                    jstree.jstree(true).refresh_node(node);
+                                }
+                            });
+                            layer.close(index);
+                        },
+                        success: function(layero, index){
+                            $(".form_datetime").datetimepicker({
+                                format: 'yyyy-mm-dd hh:ii',
+                                setStartDate: new Date(),
+                                language: 'zh-CN'
+                            });
+                        }
+                    });
+                }
+            }
+        });
+  </script>
+{% endblock scripts %}

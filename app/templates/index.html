@@ -1,0 +1,148 @@
+{% extends "include/base.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+
+{% block styles %}
+    {{ super() }}
+    <link rel="stylesheet" href="{{ url_for('.static', filename='bootstrap-table/bootstrap-table.min.css') }}">
+{% endblock %}
+
+{% block nav %}
+    <li><a href="javascript:void(0)" id="addModal">添加数据</a></li>
+{% endblock nav %}
+
+{% block content %}
+<div class="col-xs-10">
+    <div class="panel panel-default">
+        <div class="panel-body">
+            <table id="table">
+                <thead>
+                    <tr>
+                        <th class="hidden"></th>
+                        <th class="hidden"></th>
+                        <th>URl</th>
+                        <th>IP</th>
+                        <th>位置</th>
+                        <th>备注</th>
+                        <th>创建时间</th>
+                        <th>更新时间</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for shell in shells %}
+                    <tr>
+                        <td  class="hidden">{{ shell.id }}</td>
+                        <td  class="hidden">{{ shell.info }}</td>
+                        <td>{{ shell.url }}</td>
+                        <td>{{ shell.ip }}</td>
+                        <td>{{ shell.location }}</td>
+                        <td>{{ shell.note }}</td>
+                        <td>{{ shell.create_time }}</td>
+                        <td>{{ shell.update_time }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<div class="col-xs-2">
+    <div class="panel panel-default">
+        <div class="panel-body">
+            分类
+        </div>
+    </div>
+    <ul class="nav nav-pills nav-stacked">
+        {% for group in groups %}
+        <li><a href="{{ url_for('index', group=group) }}">{{ group }}</a></li>
+        {% endfor %}
+    </ul>
+</div>
+<ul id="context-menu" class="dropdown-menu">
+    <li data-item="terminal"><a href="javascript:void(0)">虚拟终端</a></li>
+    <li data-item="files"><a href="javascript:void(0)">文件管理</a></li>
+    <li data-item="database"><a href="javascript:void(0)">数据库</a></li>
+    <li data-item="browser"><a href="javascript:void(0)">打开url</a></li>
+    <li class="divider"></li>
+    <li data-item="edit"><a href="javascript:void(0)">编辑</a></li>
+    <li data-item="delete"><a href="javascript:void(0)">删除</a></li>
+</ul>
+{% endblock content %}
+
+{% block scripts %}
+  {{ super() }}
+  <script src="{{ url_for('.static', filename='bootstrap-table/bootstrap-table.min.js') }}"></script>
+  <script src="{{ url_for('.static', filename='bootstrap-table/bootstrap-table-zh-CN.js') }}"></script>
+  <script src="{{ url_for('.static', filename='bootstrap-table/bootstrap-table-contextmenu.js') }}"></script>
+  <script>
+        var table = $('#table')
+        table.bootstrapTable({
+            classes: "table table-hover table-no-bordered",
+            uniqueId: "0",
+            striped: true,
+            pagination: true,
+            search: true,
+            showToggle: true,
+            pageList: [10, 25, 50, 'All'],
+            smartDisplay:false,
+            paginationLoop: false,
+            onDblClickRow: function(row) {
+                window.open("/files/" + row[0]);
+            },
+            contextMenu: '#context-menu',
+            onContextMenuItem: function(row, $el){
+                if($el.data("item") == "terminal"){
+                    window.open("/terminal/" + row[0]);
+                } else if($el.data("item") == "files"){
+                    window.open("/files/" + row[0]);
+                } else if($el.data("item") == "database"){
+                    window.open("/database/" + row[0]);
+                } else if($el.data("item") == "browser"){
+                    window.open(row[2]);
+                } else if($el.data("item") == "edit"){
+                    layer.open({
+                        anim: 1,
+                        type: 2,
+                        title: false,
+                        area: ['50%', '60%'],
+                        shadeClose: true,
+                        shade: 0.8,
+                        content: '/data/' + row[0]
+                    });
+                } else if($el.data("item") == "delete"){
+                    layer.confirm('确定删除?', function(index){
+                        $.post("{{ url_for('delete') }}", {id: row[0],csrf_token: "{{ csrf_token() }}"}, function(result) {
+                            if(result.status) {
+                                layer.msg(result.msg)
+                                table.bootstrapTable('removeByUniqueId', row[0]);
+                            }
+                        })
+                        layer.close(index);
+                    });
+                }
+            },
+            detailView: true,
+            detailFormatter: function(index, row) {
+                data = row[1].split("\n")
+                return [
+                    '<div class="col-xs-1">操作系统:</div><div class="col-xs-5">' + data[0] + '</div>',
+                    '<div class="col-xs-1">语言版本:</div><div class="col-xs-5">' + data[1] + '</div>',
+                    '<div class="col-xs-1">请求IP:</div><div class="col-xs-5">' + data[2] + '</div>',
+                    '<div class="col-xs-1">服务信息:</div><div class="col-xs-5">' + data[3] + '</div>',
+                    '<div class="col-xs-1">当前用户:</div><div class="col-xs-5">' + data[4] + '</div>',
+                    '<div class="col-xs-1">WEB目录:</div><div class="col-xs-5">' + data[5] + '</div>',
+                ].join("\n")
+            }
+        });
+        $("#addModal").click(function() {
+            layer.open({
+                anim: 1,
+                type: 2,
+                title: false,
+                area: ['50%', '60%'],
+                shadeClose: true,
+                shade: 0.8,
+                content: '/data/',
+            });
+        })
+  </script>
+{% endblock scripts %}

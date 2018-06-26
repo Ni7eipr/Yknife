@@ -1,0 +1,81 @@
+{% extends "include/liteBase.html" %}
+
+{% block styles %}
+    {{ super() }}
+    <link rel="stylesheet" href="{{ url_for('.static', filename='codemirror/lib/codemirror.css') }}">
+    <link rel="stylesheet" href="{{ url_for('.static', filename='codemirror/theme/monokai.css') }}">
+    <style>
+        .CodeMirror {
+            border: 1px solid #eee;
+            height: auto;
+        }
+
+        .CodeMirror-scroll {
+            height: auto;
+            overflow-y: hidden;
+            overflow-x: auto;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<br>
+<div class="col-xs-12">
+    <div class="input-group">
+        <span id='path' class="input-group-addon"></span>
+        <input type="text" class="form-control" id='file'>
+        <div class="input-group-btn">
+            <button type="button" id="save" class="btn btn-default">保存</button>
+        </div>
+    </div>
+    <textarea id="code"></textarea>
+</div>
+{% endblock %}
+
+
+{% block scripts %}
+    {{ super() }}
+    <script src="{{ url_for('.static', filename='codemirror/lib/codemirror.js') }}"></script>
+    <script>
+        // function getUrlParam(name) {
+        //     var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)");
+        //     var r = window.location.search.substr(1).match(reg);
+        //     if (r != null) return unescape(r[2]); return null;
+        // }
+        // var f = getUrlParam('f');
+        $('#path').text(parent.getselectedpath()+'/')
+
+        $('#file').val('new.txt')
+
+        var code = document.getElementById("code");
+        window.editor = CodeMirror.fromTextArea(code, {
+            theme:"monokai",
+            lineNumbers: true,
+        });
+        // $.post('', {csrf_token: "{{ csrf_token() }}"}, function(result) {
+        //     if(result.status) {
+        //         $('#path').val(f)
+        //         code.value = result.data
+        //         window.editor = CodeMirror.fromTextArea(code, {
+        //             theme:"monokai",
+        //             lineNumbers: true,
+        //         });
+        //     }
+        // })
+        $("#save").click(function() {
+            file = $('#file').val()
+            $.each(parent.table.bootstrapTable('getData'), function(k, v) {
+                if(file == v[0])
+                parent.layer.msg('文件已存在！');
+                return;
+            })
+            $.post(window.location.href.replace('add', 'save')+'?f='+$('#path').text()+$('#file').val(), {'content': window.editor.getValue(), csrf_token: "{{ csrf_token() }}"}, function(result) {
+                if(result.status) {
+                    parent.jstree.jstree(true).refresh_node(parent.getselected());
+                    parent.layer.closeAll()
+                    parent.layer.msg('保存成功')
+                }
+            })
+        })
+    </script>
+{% endblock scripts %}

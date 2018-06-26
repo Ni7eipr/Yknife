@@ -1,0 +1,70 @@
+{% extends "include/base.html" %}
+
+{% block styles %}
+    {{ super() }}
+    <link rel="stylesheet" href="{{ url_for('.static', filename='codemirror/lib/codemirror.css') }}">
+    <link rel="stylesheet" href="{{ url_for('.static', filename='codemirror/theme/monokai.css') }}">
+    <style>
+        .CodeMirror {
+            border: 1px solid #eee;
+            height: auto;
+        }
+
+        .CodeMirror-scroll {
+            height: auto;
+            overflow-y: hidden;
+            overflow-x: auto;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="col-xs-12">
+    <div class="input-group">
+        <span id='coding' class="input-group-addon"></span>
+        <input type="text" class="form-control" id='path'>
+        <div class="input-group-btn">
+            <button type="button" id="save" class="btn btn-default">保存</button>
+        </div>
+    </div>
+    <textarea id="code"></textarea>
+</div>
+{% endblock %}
+
+{% block scripts %}
+    {{ super() }}
+    <script src="{{ url_for('.static', filename='codemirror/lib/codemirror.js') }}"></script>
+    <script>
+        var coding = ''
+        function getUrlParam(name) {
+            var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)");
+            var r = window.location.search.substr(1).match(reg);
+            if (r != null) return unescape(r[2]); return null;
+        }
+        var code = document.getElementById("code");
+        $.post('', {csrf_token: "{{ csrf_token() }}"}, function(result) {
+            if(result.status) {
+                coding = result.data.coding
+                code.value = result.data.content
+                $('#path').val(getUrlParam('f'))
+                $('#coding').text(coding)
+                window.editor = CodeMirror.fromTextArea(code, {
+                    theme:"monokai",
+                    lineNumbers: true,
+                });
+            }
+        })
+        $("#save").click(function() {
+            $.post(window.location.href.replace('edit', 'save'), {
+                'content': window.editor.getValue(),
+                csrf_token: "{{ csrf_token() }}",
+                coding: coding
+            }, function(result) {
+                if(result.status)
+                layer.msg(result.msg)
+                else
+                layer.msg(result.msg)
+            })
+        })
+    </script>
+{% endblock scripts %}

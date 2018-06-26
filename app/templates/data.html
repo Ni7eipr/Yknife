@@ -1,0 +1,51 @@
+{% extends "include/liteBase.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+
+{% block content %}
+<div class="container-fluid">
+    <br>
+    <!-- {{ wtf.quick_form(form, form_type="horizontal", horizontal_columns=('xs', 2, 8)) }} -->
+    <form class="form form-horizontal" method="post" role="form">
+        <ul id="myTab" class="nav nav-pills">
+            <li class="active"><a href="#base" data-toggle="tab">基本设置</a></li>
+            <li><a href="#extra" data-toggle="tab">请求设置</a></li>
+            <li><a href="#other" data-toggle="tab">其他设置</a></li>
+            <div class="pull-right">{{ wtf.form_field(form.button) }}</div>
+        </ul>
+        <br>{{ form.csrf_token }}
+        <div class="tab-content">
+            <div class="tab-pane fade in active" id="base">
+                {{ wtf.form_field(form.url, form_type="horizontal", horizontal_columns=('xs', 2, 8)) }}
+                {{ wtf.form_field(form.passwd, form_type="horizontal", horizontal_columns=('xs', 2, 8)) }}
+                {{ wtf.form_field(form.types, form_type="horizontal", horizontal_columns=('xs', 2, 8)) }}
+                {{ wtf.form_field(form.coding, form_type="horizontal", horizontal_columns=('xs', 2, 8)) }}
+                {{ wtf.form_field(form.groups, form_type="horizontal", horizontal_columns=('xs', 2, 8)) }}
+                {{ wtf.form_field(form.encoder, form_type="horizontal", horizontal_columns=('xs', 2, 8)) }}
+                {{ wtf.form_field(form.note, form_type="horizontal", horizontal_columns=('xs', 2, 8)) }}
+            </div>
+            <div class="tab-pane fade" id="extra">
+                {{ wtf.form_field(form.headers, form_type="horizontal", horizontal_columns=('xs', 2, 8)) }}
+                {{ wtf.form_field(form.data, form_type="horizontal", horizontal_columns=('xs', 2, 8)) }}
+                {{ wtf.form_field(form.cookies, form_type="horizontal", horizontal_columns=('xs', 2, 8)) }}
+            </div>
+            <div class="tab-pane fade" id="other">
+                {{ wtf.form_field(form.proxy, form_type="horizontal", horizontal_columns=('xs', 2, 8)) }}
+                <hr>
+                {{ wtf.form_field(form.groupn, form_type="horizontal", horizontal_columns=('xs', 2, 8)) }}
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+  <script>
+      var done = '{{ done }}'
+      if(self!=top)
+      if(done == 1)
+      parent.window.location.reload()
+      else if(done == 2)
+      layer.msg('地址连接失败！')
+  </script>
+{% endblock scripts %}

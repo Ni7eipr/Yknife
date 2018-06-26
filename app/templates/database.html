@@ -1,0 +1,110 @@
+{% extends "include/base.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+
+{% block styles %}
+    {{ super() }}
+    <link rel="stylesheet" href="{{ url_for('.static', filename='jstree/themes/default/style.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('.static', filename='bootstrap-table/bootstrap-table.min.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="text-center">
+  {{ wtf.quick_form(form, form_type="horizontal", extra_classes="form-inline", horizontal_columns=('xs', 5,7)) }}
+</div>
+<br>
+<div class="col-xs-2">
+    <div class="panel panel-default">
+        <div class="panel-body">
+            目录
+        </div>
+    </div>
+    <div id="jstree"></div>
+</div>
+<div class="col-xs-10">
+  <div class="panel panel-default">
+    <div class="panel-body">
+        <div class="col-xs-12">
+            <div class="input-group">
+                <input id="sql" type="text" class="form-control">
+                <span class="input-group-btn">
+                    <button id="query" class="btn btn-default" type="button">查询</button>
+                </span>
+            </div>
+        </div>
+        <table id="table"></table>
+      </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+  <script src="{{ url_for('.static', filename='bootstrap-table/bootstrap-table.min.js') }}"></script>
+  <script src="{{ url_for('.static', filename='bootstrap-table/bootstrap-table-zh-CN.js') }}"></script>
+
+  <script src="{{ url_for('.static', filename='jstree/jstree.min.js') }}"></script>
+  <script>
+        var table = $('#table');
+        var jstree =  $('#jstree');
+        function loadtable(data) {
+            columns = []
+            $.each(data[0], function(k, v) {
+                columns.push({'field':k, 'title':k})
+            })
+            table.bootstrapTable('destroy');
+            table.bootstrapTable({
+                classes: "table table-hover table-no-bordered",
+                striped: true,
+                search: true,
+                showToggle: true,
+                columns: columns,
+                data: data
+            })
+        }
+        if($("#user").val()) {
+            jstree.jstree({
+                'core' : {
+                    'data' : function (node, callback) {
+                        var path = jstree.jstree(true).get_path(node, '.');
+                        parent = jstree.jstree(true).get_parent(node);
+                        if(path == parent) {
+                            types = 'database'
+                        } else if('#' == parent) {
+                            types = 'table'
+                        } else {
+                            types = 'columns'
+                        }
+                        $.post('', {path: path, types: types, csrf_token: "{{ csrf_token() }}"}, function(result) {
+                            if(result.status == 1) {
+                                $("#sql").val(result.data.sql)
+                                if(types == 'columns') {
+                                    loadtable(result.data.data)
+                                }
+                                callback.call(this, result.data.lists);
+                            } else if(result.status == -1) {
+                                layer.confirm(result.msg, function(index){
+                                    window.close();
+                                    layer.close(index);
+                                });
+                            } else {
+                                layer.alert(result.msg)
+                                callback.call(this, '');
+                                jstree.jstree(true).disable_node(node);
+                            }
+                        })
+                    },
+                }
+            })
+        }
+        $("#query").click(function() {
+            sql = $("#sql").val()
+            $.post('', {types: 'columns', sql: sql, csrf_token: "{{ csrf_token() }}"}, function(result) {
+                if(result.status == 1) {
+                    loadtable(result.data.data)
+                } else {
+                    layer.alert(result.msg)
+                }
+            })
+        })
+  </script>
+{% endblock scripts %}

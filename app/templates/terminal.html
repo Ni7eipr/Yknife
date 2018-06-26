@@ -1,0 +1,41 @@
+{% extends "include/base.html" %}
+
+{% block styles %}
+  {{ super() }}
+  <link rel="stylesheet" href="{{ url_for('.static', filename='jquery.terminal/jquery.terminal.min.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div id="terminal" class="img-rounded" style="position:absolute"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+    {{ super() }}
+    <script src="{{ url_for('.static', filename='jquery.terminal/jquery.mousewheel-min.js') }}"></script>
+    <script src="{{ url_for('.static', filename='jquery.terminal/jquery.terminal.min.js') }}"></script>
+    <script>
+        jQuery(document).ready(function ($) {
+            var cwd = '{{ cwd }}'
+            $('#terminal').terminal(function (command, term) {
+                if (command) {
+                    $.post(window.location.href, { cwd: cwd, command: command, csrf_token: "{{ csrf_token() }}" }, function (result) {
+                        if (result.status) {
+                            data = result.data[0] + result.data[2]
+                            data = data.replace(/ /g, '&ensp;')
+                            cwd = result.data[1]
+                            term.echo(data);
+                            if (cwd != undefined) term.set_prompt(cwd + '$')
+                        }
+                    })
+                }
+            }, {
+                    prompt: cwd + '$',
+                    greetings: "{{ greetings }}",
+                    width: '60%',
+                    height: '80%',
+                });
+        });
+    </script>
+{% endblock scripts %}

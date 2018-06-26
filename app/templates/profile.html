@@ -1,0 +1,20 @@
+{% extends "include/base.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+
+{% block content %}
+<div class="container">
+    <div class="jumbotron col-xs-8 col-xs-offset-2">
+      <h2 class="form-signin-heading text-center">设置</h2>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <h5 class="text-center text-{{ category }}">{{ message }}</h5>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      {{ wtf.quick_form(form, form_type="horizontal", horizontal_columns=('xs', 2, 9)) }}
+    </div>
+</div>
+{% endblock content %}
