@@ -1,4 +1,4 @@
-## Yknif
+## Yknife
 基于python，flask的web版中国菜刀
 初始化：
 ```
