@@ -7,6 +7,7 @@ from datetime import datetime
 from app import app, lm, db
 from flask import request, g, render_template, flash, make_response, redirect, url_for, jsonify, abort
 from model import Shells, User, Config
+from config import basedir
 from form import SigninForm, SignupForm, ConfigForm, DataForm
 from request import PAYLOAD
 from flask_login import login_required, login_user, current_user
@@ -116,7 +117,7 @@ def index(group):
 
 def profile():
     theme = []
-    for i in os.listdir('./app/static/bootswatch'):
+    for i in os.listdir(os.path.join(basedir, 'static/bootswatch')):
         theme.append(i.split('.')[0])
 
     form = ConfigForm()
