@@ -85,7 +85,7 @@ def signup():
 
 
 def signin():
-    if current_user.is_authenticated():
+    if current_user.is_authenticated:
         return redirect(url_for('index', group=g.group[0]))
     form = SigninForm()
     if form.validate_on_submit():
