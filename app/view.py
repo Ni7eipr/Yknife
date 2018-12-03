@@ -10,7 +10,7 @@ from model import Shells, User, Config
 from config import basedir
 from form import SigninForm, SignupForm, ConfigForm, DataForm
 from request import PAYLOAD
-from flask_login import login_required, login_user, current_user
+from flask_login import login_required, login_user, current_user, logout_user
 from request import dataRequest
 from socket import gethostbyname
 from jinja2.filters import do_filesizeformat
