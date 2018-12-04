@@ -190,7 +190,7 @@ def edit(shellid):
         form.groups.choices = [(i, i) for i in g.group]
 
         if form.validate_on_submit():
-            shells = db.session.query(Shells).filter_by(id=shellid).first()
+            shells = db.session.query(Shells).filter_by(id=shellid, uid=current_user.id).first()
 
             shells.url = form.url.data
             shells.passwd = form.passwd.data
@@ -218,7 +218,7 @@ def edit(shellid):
             else:
                 done = 2
 
-        shell = db.session.query(Shells).filter_by(id=shellid).first()
+        shell = db.session.query(Shells).filter_by(id=shellid, uid=current_user.id).first()
         form.url.data = shell.url
         form.passwd.data = shell.passwd
         form.types.data = shell.types
@@ -236,14 +236,14 @@ def edit(shellid):
 
 def delete():
     shell = request.form.get('id')
-    if db.session.query(Shells).filter_by(id=shell).delete():
+    if db.session.query(Shells).filter_by(id=shell, uid=current_user.id).delete():
         db.session.commit()
         return jsonify({"status": 1, "msg": "删除成功"})
     return jsonify({"status": 0, "msg": "删除失败"})
 
 
 def files(shellid):
-    shells = db.session.query(Shells).filter_by(id=shellid).first()
+    shells = db.session.query(Shells).filter_by(id=shellid, uid=current_user.id).first()
     if request.method == 'GET':
         return render_template('files.html')
     else:
@@ -296,7 +296,7 @@ def files(shellid):
 
 
 def fileo(shellid, op):
-    shells = db.session.query(Shells).filter_by(id=shellid).first()
+    shells = db.session.query(Shells).filter_by(id=shellid, uid=current_user.id).first()
     req = dataRequest(shells)
     filename = request.args.get('f', '')
     filename = filename.encode(shells.coding)
